@@ -17,50 +17,50 @@
 package dynosaur
 package codec
 
-import cats._, implicits._
+import cats._
+import implicits._
 import cats.data.Chain
-
-import model.{AttributeName, AttributeValue}
 import Schema.structure._
+import dynosaur.codec.model._
 
 case class ReadError() extends Exception
 
 trait Decoder[A] {
-  def read(v: AttributeValue): Either[ReadError, A]
+  def read(v: AvroType): Either[ReadError, A]
 }
 object Decoder {
-  def instance[A](f: AttributeValue => Either[ReadError, A]): Decoder[A] =
+  def instance[A](f: AvroType => Either[ReadError, A]): Decoder[A] =
     new Decoder[A] {
-      def read(v: AttributeValue) = f(v)
+      def read(v: AvroType) = f(v)
     }
 
   def fromSchema[A](s: Schema[A]): Decoder[A] = {
     type Res[B] = Either[ReadError, B]
 
-    def decodeInt: AttributeValue => Res[Int] =
-      _.n.toRight(ReadError()).flatMap { v =>
-        Either.catchNonFatal(v.value.toInt).leftMap(_ => ReadError())
-      }
+    def decodeInt: AvroType => Res[Int] = {
+      case AvroInt(i) => i.asRight
+      case _ => ReadError().asLeft
+    }
 
-    def decodeString: AttributeValue => Res[String] =
-      _.s.toRight(ReadError()).map(_.value)
+    def decodeString: AvroType => Res[String] = {
+      case AvroString(s) => s.asRight
+      case _ => ReadError().asLeft
+    }
 
     def decodeObject[R](
         record: Ap[Field[R, ?], R],
-        v: AttributeValue.M
+        avroRecord: AvroRecord
     ): Res[R] =
       record.foldMap {
         λ[Field[R, ?] ~> Res] { field =>
-          v.values
-            .get(AttributeName(field.name))
+          avroRecord.fields
+            .get(field.name)
             .toRight(ReadError())
-            .flatMap { v =>
-              fromSchema(field.elemSchema).read(v)
-            }
+            .flatMap(avroType => fromSchema(field.elemSchema).read(avroType))
         }
       }
 
-    def decodeSum[B](cases: Chain[Alt[B]], v: AttributeValue.M): Res[B] =
+    def decodeSum[B](cases: Chain[Alt[B]], v: AvroType): Res[B] =
       cases
         .foldMapK { alt =>
           fromSchema(alt.caseSchema).read(v).map(alt.prism.inject).toOption
@@ -72,12 +72,10 @@ object Decoder {
       case Str => Decoder.instance(decodeString)
       case Rec(rec) =>
         Decoder.instance {
-          _.m.toRight(ReadError()).flatMap(decodeObject(rec, _))
+          case record: AvroRecord => decodeObject(rec, record)
+          case _ => ReadError().asLeft
         }
-      case Sum(cases) =>
-        Decoder.instance {
-          _.m.toRight(ReadError()).flatMap(decodeSum(cases, _))
-        }
+      case Sum(cases) => Decoder.instance(decodeSum(cases, _))
     }
   }
 }

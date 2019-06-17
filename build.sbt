@@ -60,7 +60,11 @@ lazy val commonSettings = Seq(
 
 lazy val consoleSettings = Seq(
   initialCommands := s"import dynosaur._",
-  scalacOptions in (Compile, console) --= Seq("-Ywarn-unused-import", "-Ywarn-unused", "-Xlint")
+  scalacOptions in (Compile, console) --= Seq(
+    "-Ywarn-unused-import",
+    "-Ywarn-unused",
+    "-Xlint"
+  )
 )
 
 lazy val compilerOptions = Seq(
@@ -111,6 +115,7 @@ lazy val dependencies = {
   val scodecBitsVersion = "1.1.9"
 
   val deps = libraryDependencies ++= Seq(
+    "org.apache.avro" % "avro" % "1.9.0",
     "org.http4s" %% "http4s-core" % http4sVersion,
     "org.http4s" %% "http4s-client" % http4sVersion,
     "co.fs2" %% "fs2-core" % fs2Version,
