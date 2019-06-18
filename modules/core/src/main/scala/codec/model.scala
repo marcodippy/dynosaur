@@ -42,6 +42,15 @@ object model {
   sealed trait AvroSchema
   case class AvroIntSchema() extends AvroSchema
   case class AvroStringSchema() extends AvroSchema
-  case class AvroRecordSchema() extends AvroSchema
+  case class AvroRecordSchema(fields: Map[String, AvroSchema]) extends AvroSchema
+
+  object AvroSchema {
+    implicit val monoidForAvroRecordSchema: Monoid[AvroRecordSchema] = new Monoid[AvroRecordSchema] {
+      override def empty: AvroRecordSchema = AvroRecordSchema(Map.empty)
+
+      override def combine(x: AvroRecordSchema, y: AvroRecordSchema): AvroRecordSchema =
+        AvroRecordSchema(x.fields ++ y.fields)
+    }
+  }
 
 }

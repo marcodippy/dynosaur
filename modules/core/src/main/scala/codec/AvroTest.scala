@@ -38,7 +38,18 @@ object AvroTest extends App {
 
   val userAvroType = Encoder.fromSchema(userSchema).write(testUser).right.get
 
-  serialise(userAvroType, toAvroSchema(userSchema))
+  val bytes = serialise(userAvroType, toAvroSchema(userSchema))
+  println(s"serialised " + bytes)
+
+  val deserialised = Decoder
+    .fromSchema(userSchema)
+    .read(
+      deserialise(bytes, toAvroSchema(userSchema))
+    )
+    .right
+    .get
+
+  println("deserialised " + deserialised)
 }
 
 object Serde {
@@ -49,7 +60,7 @@ object Serde {
 
   def serialise(avroType: AvroType, avroSchema: AvroSchema): Array[Byte] = {
     val outputStream = new ByteArrayOutputStream()
-    val datumWriter = new GenericDatumWriter[GenericRecord](toRawAvro(avroSchema))
+    val datumWriter = new GenericDatumWriter[GenericRecord](toRawAvroSchema(avroSchema))
     val encoder = EncoderFactory.get.binaryEncoder(outputStream, null)
 
     val record = toRawAvro(avroType, avroSchema).asInstanceOf[GenericRecord] //TODO
@@ -61,16 +72,19 @@ object Serde {
   }
 
   def deserialise(bytes: Array[Byte], avroSchema: AvroSchema): AvroType = {
-    val rawAvroSchema = toRawAvro(avroSchema)
+    val rawAvroSchema = toRawAvroSchema(avroSchema)
     val datumReader = new GenericDatumReader[GenericRecord](rawAvroSchema)
     val decoder = DecoderFactory.get.binaryDecoder(bytes, null)
 
     val record = datumReader.read(null, decoder)
 
-    // one level only for now...
-    val fields = rawAvroSchema.getFields.asScala
-      .map(field => field.name -> fromRawAvro(record.get(field.name), fromRawAvro(field.schema())))
-      .toMap
+    //only records, one level only for now...
+    val fields = avroSchema
+      .asInstanceOf[AvroRecordSchema]
+      .fields
+      .map {
+        case (fieldName, fieldSchema) => fieldName -> fromRawAvro(record.get(fieldName), fieldSchema)
+      }
 
     AvroRecord(fields)
   }

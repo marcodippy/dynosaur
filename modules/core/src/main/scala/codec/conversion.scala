@@ -17,43 +17,74 @@
 package dynosaur
 package codec
 
+import cats.~>
 import dynosaur.codec.Schema.structure
 import dynosaur.codec.model._
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.avro.util.Utf8
-import org.apache.avro.{Schema => RawAvroSchema}
+import org.apache.avro.{SchemaBuilder, Schema => RawAvroSchema}
 
 object conversion {
-  def toRawAvro(avroSchema: AvroSchema): RawAvroSchema =
-    RawAvroSchema.create(RawAvroSchema.Type.ARRAY)
+  def toRawAvroSchema(avroSchema: AvroSchema): RawAvroSchema =
+    avroSchema match {
+      case AvroIntSchema() => RawAvroSchema.create(RawAvroSchema.Type.INT)
+      case AvroStringSchema() => RawAvroSchema.create(RawAvroSchema.Type.STRING)
+      case AvroRecordSchema(fields) =>
+        fields
+          .foldLeft(
+            SchemaBuilder
+              .record("recordName")
+              .namespace("recordNamespace")
+              .fields()
+          ) {
+            case (sb, (fieldName, fieldSchema)) =>
+              sb.name(fieldName).`type`(toRawAvroSchema(fieldSchema)).noDefault()
+          }
+          .endRecord()
+    }
 
-  def toRawAvro(avroType: AvroType, rawAvroSchema: RawAvroSchema): AnyRef =
+  def toRawAvro(avroType: AvroType, avroSchema: AvroSchema): AnyRef =
     avroType match {
       case model.AvroInt(i) => int2Integer(i)
       case model.AvroString(s) => new Utf8(s)
       case model.AvroRecord(fields) =>
-        fields.foldLeft(new GenericData.Record(rawAvroSchema)){
-          case (r, (fieldName, fieldVal)) => r.put(fieldName, toRawAvro(fieldVal))
+        fields.foldLeft(new GenericData.Record(toRawAvroSchema(avroSchema))) {
+          case (r, (fieldName, fieldVal)) => {
+            //passing avroSchema here is wrong, it should be the schema of the field
+            r.put(fieldName, toRawAvro(fieldVal, avroSchema))
+            r
+          }
         }
     }
 
-  def fromRawAvro(rawAvroSchema: RawAvroSchema): AvroSchema = ???
-
   def fromRawAvro(v: AnyRef, avroSchema: AvroSchema): AvroType =
-    v match {
-      case a: java.lang.Integer => AvroInt(a)
-      case s: java.lang.String => AvroString(s)
-      case _ => throw new RuntimeException("value not handled")
+    avroSchema match {
+      case AvroIntSchema() => AvroInt(v.toString.toInt)
+      case AvroStringSchema() => AvroString(v.toString)
+      case AvroRecordSchema(fields) =>
+        val r = v.asInstanceOf[GenericRecord]
+        AvroRecord(
+          fields
+            .map { case (name, schema) => name -> fromRawAvro(r.get(name), avroSchema) } //passing the avroSchema here is wrong
+        )
+      case a => throw new RuntimeException("value not handled " + a)
     }
-
 
   def toAvroSchema[A](schema: Schema[A]): AvroSchema = {
     import structure._
+
+    def translateSchema[R](record: Ap[Field[R, ?], R]): AvroRecordSchema =
+      record.analyze {
+        λ[Field[R, ?] ~> λ[a => AvroRecordSchema]] { field =>
+          AvroRecordSchema(Map(field.name -> toAvroSchema(field.elemSchema)))
+        }
+      }
+
     schema match {
       case Num => AvroIntSchema()
       case Str => AvroStringSchema()
-      case Rec(p) => AvroRecordSchema()
-      case Sum(alt) => ???
+      case Rec(record) => translateSchema(record)
+      case Sum(alt) => throw new RuntimeException()
     }
   }
 }
