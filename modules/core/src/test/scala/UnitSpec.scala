@@ -19,8 +19,4 @@ package dynosaur
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, WordSpec}
 
-abstract class UnitSpec
-    extends WordSpec
-    with Matchers
-    with PropertyChecks
-    with IOFutures
+abstract class UnitSpec extends WordSpec with Matchers with PropertyChecks with IOFutures

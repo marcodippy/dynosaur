@@ -65,8 +65,7 @@ object ExpressionAlias {
             .fromString(s)
             .fold(
               e => c.abort(c.enclosingPosition, e),
-              _ =>
-                q"_root_.dynosaur.lo.model.ExpressionAlias.unsafeFromString($s)"
+              _ => q"_root_.dynosaur.lo.model.ExpressionAlias.unsafeFromString($s)"
             )
         case _ =>
           c.abort(
@@ -108,8 +107,7 @@ object ExpressionPlaceholder {
             .fromString(s)
             .fold(
               e => c.abort(c.enclosingPosition, e),
-              _ =>
-                q"_root_.dynosaur.lo.model.ExpressionPlaceholder.unsafeFromString($s)"
+              _ => q"_root_.dynosaur.lo.model.ExpressionPlaceholder.unsafeFromString($s)"
             )
         case _ =>
           c.abort(
@@ -138,8 +136,7 @@ case class PutItemRequest(
     item: AttributeValue.M,
     conditionExpression: Option[ConditionExpression] = None,
     expressionAttributeNames: Map[ExpressionAlias, AttributeName] = Map.empty,
-    expressionAttributeValues: Map[ExpressionPlaceholder, AttributeValue] =
-      Map.empty,
+    expressionAttributeValues: Map[ExpressionPlaceholder, AttributeValue] = Map.empty,
     returnValues: ReturnValues = ReturnValues.None
 )
 
@@ -162,8 +159,7 @@ case class DeleteItemRequest(
     key: AttributeValue.M,
     conditionExpression: Option[ConditionExpression] = None,
     expressionAttributeNames: Map[ExpressionAlias, AttributeName] = Map.empty,
-    expressionAttributeValues: Map[ExpressionPlaceholder, AttributeValue] =
-      Map.empty,
+    expressionAttributeValues: Map[ExpressionPlaceholder, AttributeValue] = Map.empty,
     returnValues: ReturnValues = ReturnValues.None
 )
 
@@ -176,8 +172,7 @@ case class UpdateItemRequest(
     key: AttributeValue.M,
     updateExpression: UpdateExpression,
     expressionAttributeNames: Map[ExpressionAlias, AttributeName] = Map.empty,
-    expressionAttributeValues: Map[ExpressionPlaceholder, AttributeValue] =
-      Map.empty,
+    expressionAttributeValues: Map[ExpressionPlaceholder, AttributeValue] = Map.empty,
     conditionExpression: Option[ConditionExpression] = None,
     returnValues: ReturnValues = ReturnValues.None
 )
@@ -203,5 +198,4 @@ case class BatchWriteItemsResponse(
 )
 
 // TODO Model all the DynamoDb errors
-case class DynamoDbError(message: String, retriable: Boolean = false)
-    extends Exception(message)
+case class DynamoDbError(message: String, retriable: Boolean = false) extends Exception(message)

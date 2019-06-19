@@ -105,8 +105,7 @@ object DynamoDb {
           .encodeBy(`X-Amz-Target`(op.target))(jsonEncoderOf[F, Req].toEntity)
           .withContentType(`Content-Type`(`application/x-amz-json-1.0`))
 
-        implicit val decodeDynamoDbErrorAsJson
-            : EntityDecoder[F, DynamoDbError] =
+        implicit val decodeDynamoDbErrorAsJson: EntityDecoder[F, DynamoDbError] =
           jsonOf[F, DynamoDbError]
 
         for {

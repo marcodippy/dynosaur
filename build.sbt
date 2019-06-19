@@ -1,6 +1,6 @@
 lazy val root = project
   .in(file("."))
-  .aggregate(core)
+  .aggregate(core, macros)
   .settings(
     inThisBuild(
       commonSettings ++ compilerOptions ++ releaseOptions ++ consoleSettings
@@ -11,7 +11,21 @@ lazy val core = project
   .in(file("modules/core"))
   .settings(
     name := "dynosaur-core",
-    scalafmtOnCompile := true,
+    scalafmtOnCompile := false,
+    dependencies
+  )
+  .enablePlugins(AutomateHeaderPlugin)
+  .configs(IntegrationTest)
+  .settings(
+    inConfig(IntegrationTest)(Defaults.itSettings),
+    automateHeaderSettings(IntegrationTest)
+  )
+
+lazy val macros = project
+  .in(file("modules/macros"))
+  .settings(
+    name := "dynosaur-macros",
+    scalafmtOnCompile := false,
     dependencies
   )
   .enablePlugins(AutomateHeaderPlugin)
@@ -76,7 +90,6 @@ lazy val compilerOptions = Seq(
     "-language:postfixOps",
     "-language:experimental.macros",
     "-unchecked",
-    "-Xlint",
     "-Yno-adapted-args",
     "-Ywarn-dead-code",
     "-Ywarn-numeric-widen",
@@ -111,6 +124,7 @@ lazy val dependencies = {
   val scodecBitsVersion = "1.1.9"
 
   val deps = libraryDependencies ++= Seq(
+    "org.apache.avro" % "avro" % "1.9.0",
     "org.http4s" %% "http4s-core" % http4sVersion,
     "org.http4s" %% "http4s-client" % http4sVersion,
     "co.fs2" %% "fs2-core" % fs2Version,

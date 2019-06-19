@@ -90,8 +90,7 @@ object AttributeValue {
   case class N(value: String) extends AttributeValue
   case class B(value: ByteVector) extends AttributeValue
   case class BOOL(value: Boolean) extends AttributeValue
-  case class M(values: Map[AttributeName, AttributeValue])
-      extends AttributeValue
+  case class M(values: Map[AttributeName, AttributeValue]) extends AttributeValue
   case class L(values: List[AttributeValue]) extends AttributeValue
   case class SS(values: Set[String]) extends AttributeValue
   case class NS(values: Set[String]) extends AttributeValue

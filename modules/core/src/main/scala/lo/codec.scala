@@ -53,14 +53,12 @@ object codec {
         ExpressionAlias.fromString(key).toOption
     }
 
-  implicit val expressionPlaceholderKeyEncoder
-      : KeyEncoder[ExpressionPlaceholder] =
+  implicit val expressionPlaceholderKeyEncoder: KeyEncoder[ExpressionPlaceholder] =
     new KeyEncoder[ExpressionPlaceholder] {
       override def apply(an: ExpressionPlaceholder): String = an.value
     }
 
-  implicit val expressionPlaceholderKeyDecoder
-      : KeyDecoder[ExpressionPlaceholder] =
+  implicit val expressionPlaceholderKeyDecoder: KeyDecoder[ExpressionPlaceholder] =
     new KeyDecoder[ExpressionPlaceholder] {
       override def apply(key: String): Option[ExpressionPlaceholder] =
         ExpressionPlaceholder.fromString(key).toOption
@@ -338,10 +336,8 @@ object codec {
       } yield UpdateItemResponse(attributes)
     }
 
-  implicit lazy val encodeBatchWriteItemsRequest
-      : Encoder[BatchWriteItemsRequest] = Encoder.instance { request =>
-    implicit val encodeWriteRequest
-        : Encoder[BatchWriteItemsRequest.WriteRequest] = Encoder.instance {
+  implicit lazy val encodeBatchWriteItemsRequest: Encoder[BatchWriteItemsRequest] = Encoder.instance { request =>
+    implicit val encodeWriteRequest: Encoder[BatchWriteItemsRequest.WriteRequest] = Encoder.instance {
       case BatchWriteItemsRequest.PutRequest(item) =>
         Json.obj("PutRequest" -> Json.obj("Item" -> extractM(item.asJson)))
       case BatchWriteItemsRequest.DeleteRequest(key) =>
@@ -351,10 +347,8 @@ object codec {
     Json.obj("RequestItems" -> request.requestItems.asJson)
   }
 
-  implicit lazy val decodeBatchWriteItemsRequest
-      : Decoder[BatchWriteItemsResponse] = Decoder.instance { hc =>
-    implicit val decodeWriteRequest
-        : Decoder[BatchWriteItemsRequest.WriteRequest] = {
+  implicit lazy val decodeBatchWriteItemsRequest: Decoder[BatchWriteItemsResponse] = Decoder.instance { hc =>
+    implicit val decodeWriteRequest: Decoder[BatchWriteItemsRequest.WriteRequest] = {
       val decodePut = Decoder.instance(
         _.downField("PutRequest")
           .downField("Item")

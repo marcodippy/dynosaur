@@ -28,9 +28,9 @@ object Schema {
     type Ap[F[_], A] = FreeApplicative[F, A]
     val Ap = FreeApplicative
 
-    case object Num extends Schema[Int]
+    case object Num extends Schema[Int] {}
     case object Str extends Schema[String]
-    case class Rec[R](p: Ap[Field[R, ?], R]) extends Schema[R]
+    case class Rec[R](name: String, namespace: String, p: Ap[Field[R, ?], R]) extends Schema[R]
     case class Sum[A](alt: Chain[Alt[A]]) extends Schema[A]
 
     case class Field[R, E](name: String, elemSchema: Schema[E], get: R => E)
@@ -44,18 +44,13 @@ object Schema {
 
   import structure._
 
-  def str: Schema[String] = Str
-  def num: Schema[Int] = Num
+  implicit val str: Schema[String] = Str
+  implicit val num: Schema[Int] = Num
 
-  def fields[R](p: Ap[Field[R, ?], R]): Schema[R] = Rec(p)
-  def record[R](b: FieldBuilder[R] => Ap[Field[R, ?], R]): Schema[R] =
-    fields(b(field))
-  def emptyRecord: Schema[Unit] = record(_.pure(()))
-
-  def tag[A](name: String)(schema: Schema[A]): Schema[A] =
-    record { field =>
-      field(name, schema, x => x)
-    }
+  def fields[R](namespace: String, name: String)(p: Ap[Field[R, ?], R]): Schema[R] =
+    Rec(name, namespace, p)
+  def record[R](namespace: String, name: String)(b: FieldBuilder[R] => Ap[Field[R, ?], R]): Schema[R] =
+    fields(namespace, name)(b(field))
 
   def alternatives[A](cases: Chain[Alt[A]]): Schema[A] =
     Sum(cases)
@@ -88,4 +83,5 @@ object Schema {
         }
       }
   }
+
 }
