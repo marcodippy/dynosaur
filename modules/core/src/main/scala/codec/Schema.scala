@@ -23,6 +23,7 @@ import cats.data.Chain
 sealed trait Schema[A] {
   override def toString = "Schema(..)"
 }
+
 object Schema {
   object structure {
     type Ap[F[_], A] = FreeApplicative[F, A]
@@ -33,7 +34,11 @@ object Schema {
     case class Rec[R](p: Ap[Field[R, ?], R]) extends Schema[R]
     case class Sum[A](alt: Chain[Alt[A]]) extends Schema[A]
 
-    case class Field[R, E](name: String, elemSchema: Schema[E], get: R => E)
+    case class Field[R, E](
+        name: String,
+        elemSchema: () => Schema[E],
+        get: R => E
+    )
     trait Alt[A] {
       type B
       def caseSchema: Schema[B]
@@ -70,17 +75,17 @@ object Schema {
   class FieldBuilder[R] {
     def apply[E](
         name: String,
-        elemSchema: Schema[E],
+        elemSchema: => Schema[E],
         get: R => E
     ): Ap[Field[R, ?], E] =
-      Ap.lift(Field(name, elemSchema, get))
+      Ap.lift(Field(name, () => elemSchema, get))
 
     def pure[A](a: A): Ap[Field[R, ?], A] = Ap.pure(a)
   }
 
   class AltBuilder[A] {
     def apply[B_](
-        caseSchema_ : Schema[B_]
+        caseSchema_ : => Schema[B_]
     )(implicit prism_ : Prism[A, B_]): Chain[Alt[A]] =
       Chain.one {
         new Alt[A] {

@@ -55,7 +55,7 @@ object Decoder {
             .get(AttributeName(field.name))
             .toRight(ReadError())
             .flatMap { v =>
-              fromSchema(field.elemSchema).read(v)
+              fromSchema(field.elemSchema()).read(v)
             }
         }
       }

@@ -44,7 +44,7 @@ object Encoder {
         .analyze {
           λ[Field[R, ?] ~> λ[a => Either[WriteError, AttributeValue.M]]] {
             field =>
-              fromSchema(field.elemSchema).write(field.get(v)).map { av =>
+              fromSchema(field.elemSchema()).write(field.get(v)).map { av =>
                 AttributeValue.M(Map(AttributeName(field.name) -> av))
               }
           }

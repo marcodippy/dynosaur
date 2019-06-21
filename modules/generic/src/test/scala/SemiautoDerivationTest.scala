@@ -313,56 +313,53 @@ class SemiautoDerivationTest extends FunSuite with Matchers {
   }
 
   test("derive for recursive coproduct") {
-    pendingUntilFixed {
-      info("Support recursive schemas")
 
-      val emptyMyList = MyNil
-      val singletonMyList = MyCons("a1", MyNil)
-      val myList = MyCons("a1", MyCons("a1", MyNil))
+    val emptyMyList = MyNil
+    val singletonMyList = MyCons("a1", MyNil)
+    val myList = MyCons("a1", MyCons("a1", MyNil))
 
-      implicit val schemaForMyNil: Schema[MyNil.type] = deriveSchema[MyNil.type]
-      implicit lazy val schemaForMyList: Schema[MyList] = deriveSchema[MyList]
-      implicit lazy val schemaForMyCons: Schema[MyCons] = deriveSchema[MyCons]
+    implicit val schemaForMyNil: Schema[MyNil.type] = deriveSchema[MyNil.type]
+    implicit lazy val schemaForMyList: Schema[MyList] = deriveSchema[MyList]
+    implicit lazy val schemaForMyCons: Schema[MyCons] = deriveSchema[MyCons]
 
-      roundtrip(
-        deriveSchema[MyList],
-        emptyMyList,
-        AttributeValue.m(AttributeName("myNil") -> AttributeValue.m())
-      )
+    roundtrip(
+      deriveSchema[MyList],
+      emptyMyList,
+      AttributeValue.m(AttributeName("myNil") -> AttributeValue.m())
+    )
 
-      roundtrip(
-        deriveSchema[MyList],
-        singletonMyList,
-        AttributeValue.m(
-          AttributeName("myCons") -> AttributeValue.m(
-            AttributeName("h") -> AttributeValue.s(singletonMyList.h),
-            AttributeName("t") -> AttributeValue.m(
-              AttributeName("myNil") -> AttributeValue.m()
-            )
+    roundtrip(
+      deriveSchema[MyList],
+      singletonMyList,
+      AttributeValue.m(
+        AttributeName("myCons") -> AttributeValue.m(
+          AttributeName("h") -> AttributeValue.s(singletonMyList.h),
+          AttributeName("t") -> AttributeValue.m(
+            AttributeName("myNil") -> AttributeValue.m()
           )
         )
       )
+    )
 
-      roundtrip(
-        deriveSchema[MyList],
-        myList,
-        AttributeValue.m(
-          AttributeName("myCons") -> AttributeValue.m(
-            AttributeName("h") -> AttributeValue.s(myList.h),
-            AttributeName("t") -> AttributeValue.m(
-              AttributeName("myCons") -> AttributeValue.m(
-                AttributeName("h") -> AttributeValue.s(
-                  myList.t.asInstanceOf[MyCons].h
-                ),
-                AttributeName("t") -> AttributeValue.m(
-                  AttributeName("myNil") -> AttributeValue.m()
-                )
+    roundtrip(
+      deriveSchema[MyList],
+      myList,
+      AttributeValue.m(
+        AttributeName("myCons") -> AttributeValue.m(
+          AttributeName("h") -> AttributeValue.s(myList.h),
+          AttributeName("t") -> AttributeValue.m(
+            AttributeName("myCons") -> AttributeValue.m(
+              AttributeName("h") -> AttributeValue.s(
+                myList.t.asInstanceOf[MyCons].h
+              ),
+              AttributeName("t") -> AttributeValue.m(
+                AttributeName("myNil") -> AttributeValue.m()
               )
             )
           )
         )
       )
-    }
+    )
   }
 
   def roundtrip[A](
