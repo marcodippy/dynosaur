@@ -1,6 +1,6 @@
 lazy val root = project
   .in(file("."))
-  .aggregate(core)
+  .aggregate(core, generic)
   .settings(
     inThisBuild(
       commonSettings ++ compilerOptions ++ releaseOptions ++ consoleSettings
@@ -13,6 +13,21 @@ lazy val core = project
     name := "dynosaur-core",
     scalafmtOnCompile := true,
     dependencies
+  )
+  .enablePlugins(AutomateHeaderPlugin)
+  .configs(IntegrationTest)
+  .settings(
+    inConfig(IntegrationTest)(Defaults.itSettings),
+    automateHeaderSettings(IntegrationTest)
+  )
+
+lazy val generic = project
+  .in(file("modules/generic"))
+  .dependsOn(core)
+  .settings(
+    name := "dynosaur-generic",
+    scalafmtOnCompile := true,
+    genericDependencies
   )
   .enablePlugins(AutomateHeaderPlugin)
   .configs(IntegrationTest)
@@ -60,7 +75,12 @@ lazy val commonSettings = Seq(
 
 lazy val consoleSettings = Seq(
   initialCommands := s"import dynosaur._",
-  scalacOptions in (Compile, console) --= Seq("-Ywarn-unused-import", "-Ywarn-unused", "-Xlint")
+  scalacOptions in (Compile, console) --= Seq(
+    "-Ywarn-macros:after",
+    "-Ywarn-unused-import",
+    "-Ywarn-unused",
+    "-Xlint"
+  )
 )
 
 lazy val compilerOptions = Seq(
@@ -76,7 +96,7 @@ lazy val compilerOptions = Seq(
     "-language:postfixOps",
     "-language:experimental.macros",
     "-unchecked",
-    "-Xlint",
+    "-Ywarn-macros:after",
     "-Yno-adapted-args",
     "-Ywarn-dead-code",
     "-Ywarn-numeric-widen",
@@ -142,6 +162,20 @@ lazy val dependencies = {
   val ovoMaven = resolvers += Resolver.bintrayRepo("ovotech", "maven")
 
   Seq(deps, testDeps, ovoMaven)
+}
+
+lazy val genericDependencies = {
+  val shapeless = "2.3.3"
+  val scalatestVersion = "3.0.5"
+
+  val deps = libraryDependencies ++= Seq(
+    "com.chuusai" %% "shapeless" % shapeless
+  )
+
+  val testDeps = libraryDependencies ++= Seq(
+    "org.scalatest" %% "scalatest" % scalatestVersion
+  )
+  Seq(deps, testDeps)
 }
 
 lazy val releaseOptions = Seq(

@@ -44,8 +44,10 @@ object Schema {
 
   import structure._
 
-  def str: Schema[String] = Str
-  def num: Schema[Int] = Num
+  def apply[A](implicit schema: Schema[A]): Schema[A] = schema
+
+  val str: Schema[String] = Str
+  val num: Schema[Int] = Num
 
   def fields[R](p: Ap[Field[R, ?], R]): Schema[R] = Rec(p)
   def record[R](b: FieldBuilder[R] => Ap[Field[R, ?], R]): Schema[R] =
